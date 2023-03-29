@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "819099918783",
+    "project_id": "mangotv-app-1ff36",
+    "storage_bucket": "mangotv-app-1ff36.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:819099918783:android:7f21e336ee1f227bdac10a",
+        "android_client_info": {
+          "package_name": "com.mango.mango_tv"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "819099918783-sqa8d41po1u123p3hcap52ib1cuk37ia.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClR961dpc1N9VmlKCTysR7Dwaw77g7SKY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "819099918783-sqa8d41po1u123p3hcap52ib1cuk37ia.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

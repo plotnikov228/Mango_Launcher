@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Mango TV</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="dialog_core_not_installed_title">IPTV Core не установлен</string>
+    <string name="dialog_core_not_installed_message">Пожалуйста устновите \"IPTV Core\" приложение с Google Play</string>
+    <string name="dialog_button_install">Установить</string>
+    <string name="dialog_button_cancel">Отменить</string>
+    <string name="dismiss">Отклонить</string>
+    <string name="a_new_update_is_available">Доступно новое обновление!</string>
+    <string name="update_your_app">Обновите приложение до версии</string>
+    <string name="hi">Привет</string>
+    <string name="first_start">Это твой первый запуск приложения</string>
+    <string name="apply">Принять</string>
+</resources>

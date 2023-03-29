@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<defaults>
+  <entry>
+    <key>notification_title</key>
+    <value />
+  </entry>
+  <entry>
+    <key>notification_body</key>
+    <value />
+  </entry>
+  <entry>
+    <key>preferred_player_package</key>
+    <value />
+  </entry>
+  <entry>
+    <key>http_user_agent</key>
+    <value />
+  </entry>
+  <entry>
+    <key>app_version</key>
+    <value />
+  </entry>
+  <entry>
+    <key>hide_all_channels_tab</key>
+    <value />
+  </entry>
+  <entry>
+    <key>http_read_timeout</key>
+    <value />
+  </entry>
+  <entry>
+    <key>playlist_url</key>
+    <value />
+  </entry>
+  <entry>
+    <key>http_connect_timeout</key>
+    <value />
+  </entry>
+  <entry>
+    <key>url_tvg</key>
+    <value />
+  </entry>
+  <entry>
+    <key>package</key>
+    <value />
+  </entry>
+</defaults>

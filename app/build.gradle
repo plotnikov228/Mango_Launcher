@@ -1,0 +1,46 @@
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+
+}
+
+android {
+    signingConfigs {
+        debug {
+            storeFile file('C:\\programming\\key.jks')
+            storePassword '25642564'
+            keyPassword '25642564'
+            keyAlias 'key'
+        }
+    }
+    compileSdk 33
+
+    defaultConfig {
+        applicationId "com.mango.mango_tv"
+        minSdk 21
+        targetSdk 33
+        versionCode 1
+        versionName "1.0.1"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation platform('com.google.firebase:firebase-bom:31.2.3')
+    implementation 'com.google.firebase:firebase-analytics:21.2.0'
+    implementation 'com.google.android.material:material:1.8.0'
+    implementation 'com.google.firebase:firebase-messaging:23.1.2'
+    implementation 'com.google.firebase:firebase-storage:20.1.0'
+    implementation 'com.google.firebase:firebase-inappmessaging-display:20.3.1'
+    apply plugin: 'com.google.gms.google-services'
+    implementation 'com.google.firebase:firebase-config'
+    implementation 'androidx.leanback:leanback:1.0.0'
+}
