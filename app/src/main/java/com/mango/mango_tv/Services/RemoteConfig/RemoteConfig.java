@@ -59,7 +59,9 @@ public class RemoteConfig {
     public String notificationBody;
 
     FirebaseRemoteConfig mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
-    FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder().build();
+    FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
+            .setMinimumFetchIntervalInSeconds(0).build();
+
     public RemoteConfig(Context context, Activity activity) {
         this.activity = activity;
         this.context = context;
@@ -67,6 +69,7 @@ public class RemoteConfig {
 
     public void fetch() {
         mFirebaseRemoteConfig.setDefaultsAsync(R.xml.remote_config_defaults);
+
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings).addOnCompleteListener(task -> mFirebaseRemoteConfig.fetchAndActivate().addOnCompleteListener(new OnCompleteListener<Boolean>() {
             @Override
             public void onComplete(@NonNull Task<Boolean> task) {
@@ -75,13 +78,13 @@ public class RemoteConfig {
                 httpConnectTimeout = getHttpConnectTimeout();
                 httpReadTimeout = getHttpReadTimeout();
                 httpUserAgent = getHttpUserAgent();
-                preferredPlayerPackage= getPreferredPlayerPackage();
+                preferredPlayerPackage = getPreferredPlayerPackage();
                 hideAllChannelsTab = getHideAllChannelsTab();
                 appVersion = getAppVersion();
                 _package = getPackage();
                 getNotification();
             }
-        } ).addOnFailureListener(new OnFailureListener() {
+        }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
                 System.out.println(e);
@@ -101,7 +104,7 @@ public class RemoteConfig {
                 System.out.println(_package);
                 intent.putExtra("package", _package);
             }*/
-                intent.putExtra("package", activity.getPackageName());
+            intent.putExtra("package", activity.getPackageName());
             if (playlistUrl != null) {
                 intent.setData(Uri.parse(playlistUrl));
             }
@@ -114,10 +117,10 @@ public class RemoteConfig {
             if (httpReadTimeout != null) {
                 intent.putExtra(http_read_timeout, httpReadTimeout * 1000);
             }
-            if (httpUserAgent != null ) {
+            if (httpUserAgent != null) {
                 intent.putExtra(http_user_agent, httpUserAgent);
             }
-            if (preferredPlayerPackage != null ) {
+            if (preferredPlayerPackage != null) {
                 intent.putExtra(preferred_player_package, preferredPlayerPackage);
             }
             if (hideAllChannelsTab != null) {
@@ -138,8 +141,9 @@ public class RemoteConfig {
             currentAppVersionStr = appVersion;
             if (!PermissionUtils.hasPermissions(context)) {
                 PermissionUtils.requestPermissions(activity, 101);
+                PermissionUtils.getPermissionsForInstallingFromUnknownSource(context, activity);
             }
-            PermissionUtils.getPermissionsForInstallingFromUnknownSource(context, activity);
+
 
             Downloader downloader = new Downloader(currentAppVersionStr, context, activity);
             downloader.createMessage(intent);
@@ -176,33 +180,39 @@ public class RemoteConfig {
     private Boolean getHideAllChannelsTab() {
         return mFirebaseRemoteConfig.getBoolean(hide_all_channels_tab);
     }
+
     private String getPackage() {
         return mFirebaseRemoteConfig.getString("package");
     }
 
     private void getNotification() {
-        notificationTitle =  mFirebaseRemoteConfig.getString(notification_title);
-        notificationBody =  mFirebaseRemoteConfig.getString(notification_body);
+        notificationTitle = mFirebaseRemoteConfig.getString(notification_title);
+        notificationBody = mFirebaseRemoteConfig.getString(notification_body);
         final SharedPreferences sharedPreferences = PreferenceManager
                 .getDefaultSharedPreferences(context);
-        SharedPreferences.Editor myEditor = sharedPreferences.edit();
         String title = sharedPreferences.getString(notification_title, "");
         String body = sharedPreferences.getString(notification_body, "");
-        if(notificationTitle != title && notificationBody != body){
+        System.out.println(title);
+        System.out.println(body);
+        if (!notificationTitle.equals(title) || !notificationBody.equals(body)) {
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             builder.setTitle(notificationTitle);
             builder.setMessage(notificationBody);
             builder.setPositiveButton(context.getString(R.string.apply),
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialogInterface, int id) {
+
                             dialogInterface.dismiss();
+
+                            SharedPreferences.Editor myEditor = sharedPreferences.edit();
+                            myEditor.putString(notification_title, notificationTitle);
+                            myEditor.putString(notification_body, notificationBody);
+                            myEditor.apply();
                             init();
+
                         }
                     });
-            myEditor.putString(notification_title, notificationTitle);
-            myEditor.apply();
-            myEditor.putString(notification_body, notificationBody);
-            myEditor.apply();
+
 
             builder.setCancelable(false);
             builder.create().show();

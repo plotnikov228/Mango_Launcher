@@ -5,14 +5,7 @@ plugins {
 }
 
 android {
-    signingConfigs {
-        debug {
-            storeFile file('C:\\programming\\key.jks')
-            storePassword '25642564'
-            keyPassword '25642564'
-            keyAlias 'key'
-        }
-    }
+
     compileSdk 33
 
     defaultConfig {
@@ -20,7 +13,7 @@ android {
         minSdk 21
         targetSdk 33
         versionCode 1
-        versionName "1.0.1"
+        versionName "1.0.0"
 
     }
 

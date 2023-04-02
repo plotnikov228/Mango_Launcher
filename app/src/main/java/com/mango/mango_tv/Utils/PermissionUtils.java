@@ -17,9 +17,11 @@ public class PermissionUtils {
 
     public static void getPermissionsForInstallingFromUnknownSource (Context context, Activity activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            boolean haveInstallPermission = context.getPackageManager().canRequestPackageInstalls();
-            if (!haveInstallPermission) {
+            if(context.getPackageManager().canRequestPackageInstalls()){
+                activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES));
+            } else {
                 ActivityCompat.requestPermissions(activity, new String[] {Manifest.permission.REQUEST_INSTALL_PACKAGES}, 101);
+                activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES));
             }
         }
     }
