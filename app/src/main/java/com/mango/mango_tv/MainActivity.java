@@ -1,22 +1,30 @@
 package com.mango.mango_tv;
 
+import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.mango.mango_tv.Services.Analytics.MyFirebaseAnalytics;
 import com.mango.mango_tv.Services.Notifications.Local.LocalNotification;
 import com.mango.mango_tv.Services.Notifications.Remote.MyFirebaseMessagingService;
 import com.mango.mango_tv.Services.RemoteConfig.RemoteConfig;
-import com.google.firebase.analytics.FirebaseAnalytics;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,14 +32,41 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // setContentView(R.layout.activity_main);
+        try {
             FirebaseMessaging.getInstance().subscribeToTopic("all");
-
-            start(this);
+            deviceModelCheck(this, this);
             // If "package" extra is set, IPTV Core will be able to show your app name as a title
+
+        } catch (Exception _) {
+            Toast.makeText(this, _.toString(),
+                    Toast.LENGTH_LONG).show();
+        }
 
 
     }
 
+
+    private void deviceModelCheck(Context context, Activity activity) {
+        String model = Build.MODEL;
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("Models").document(model).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                    if (documentSnapshot.exists()) {
+                        start(context);
+                    } else {
+                        showDeviceErrorDialog(activity);
+                    }
+
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(activity, e.toString(),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
 
 
     private void start(Context appContext) {
@@ -40,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = new Intent(appContext, MyFirebaseMessagingService.class);
         startService(intent);
-
         final SharedPreferences myPreferences = PreferenceManager
                 .getDefaultSharedPreferences(appContext);
         SharedPreferences.Editor myEditor = myPreferences.edit();
@@ -70,6 +104,19 @@ public class MainActivity extends AppCompatActivity {
         } else {
             remoteConfig.fetch();
         }
+    }
+
+    private void showDeviceErrorDialog(Activity activity) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(getString(R.string.device_verification_error));
+        builder.setPositiveButton(getString(R.string.dialog_button_ok),
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialogInterface, int id) {
+                        activity.finish();
+                    }
+                });
+        builder.setCancelable(false);
+        builder.create().show();
     }
 
     private static final String _IPTV_CORE_PACKAGE_NAME = "ru.iptvremote.android.iptv.core";
