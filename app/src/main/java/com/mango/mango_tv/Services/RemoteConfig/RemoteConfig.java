@@ -9,19 +9,26 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.mango.mango_tv.BuildConfig;
 import com.mango.mango_tv.R;
+import com.mango.mango_tv.Services.Browser.Browser;
 import com.mango.mango_tv.Services.Downloader.Downloader;
 import com.mango.mango_tv.Utils.PermissionUtils;
+
+import java.util.concurrent.Callable;
 
 public class RemoteConfig {
 
@@ -44,6 +51,8 @@ public class RemoteConfig {
     private final String app_version = "app_version";
     private final String notification_title = "notification_title";
     private final String notification_body = "notification_body";
+    private final String notification_title_in_first_open = "notification_title_in_first_open";
+    private final String notification_body_in_first_open = "notification_body_in_first_open";
 
     private String playlistUrl;
     private String tvgUrl;
@@ -57,6 +66,9 @@ public class RemoteConfig {
     public String currentAppVersionStr;
     public String notificationTitle;
     public String notificationBody;
+    public String notificationTitleInFirstOpen;
+    public String notificationBodyInFirstOpen;
+
 
     FirebaseRemoteConfig mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
     FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
@@ -100,11 +112,7 @@ public class RemoteConfig {
             showIptvCoreNotFoundDialog();
         }
         try {
-            /*if (_package != null ) {
-                System.out.println(_package);
-                intent.putExtra("package", _package);
-            }*/
-            intent.putExtra("package", activity.getPackageName());
+            intent.putExtra("package", _package);
             if (playlistUrl != null) {
                 intent.setData(Uri.parse(playlistUrl));
             }
@@ -127,16 +135,14 @@ public class RemoteConfig {
                 intent.putExtra(hide_all_channels_tab, hideAllChannelsTab);
             }
 
-            checkAppVersion(activity);
+            checkAppVersion();
         } catch (Exception e) {
             System.out.println(e);
         }
     }
+    Downloader downloader = new Downloader(context, activity);
+    private void checkAppVersion() {
 
-    public void checkAppVersion(Activity activity) {
-        final SharedPreferences sharedPreferences = PreferenceManager
-                .getDefaultSharedPreferences(context);
-        String app_version = "appVersion";
         if (!BuildConfig.VERSION_NAME.equals(appVersion) && appVersion != null) {
             currentAppVersionStr = appVersion;
             if (!PermissionUtils.hasPermissions(context)) {
@@ -145,11 +151,18 @@ public class RemoteConfig {
             }
 
 
-            Downloader downloader = new Downloader(currentAppVersionStr, context, activity);
-            downloader.createMessage(intent);
+
+            downloader.createMessage(intent, showIptvCoreNotFoundDialog(), currentAppVersionStr);
         } else {
-            activity.startActivity(intent);
-            activity.finish();
+            try {
+                activity.startActivity(intent);
+                activity.finish();
+            }
+            catch (ActivityNotFoundException e) {
+                // IPTV core app is not installed, let's ask the user to install it.
+                showIptvCoreNotFoundDialog();
+            }
+
         }
     }
 
@@ -177,6 +190,7 @@ public class RemoteConfig {
         return mFirebaseRemoteConfig.getString(preferred_player_package);
     }
 
+
     private Boolean getHideAllChannelsTab() {
         return mFirebaseRemoteConfig.getBoolean(hide_all_channels_tab);
     }
@@ -185,7 +199,38 @@ public class RemoteConfig {
         return mFirebaseRemoteConfig.getString("package");
     }
 
-    private void getNotification() {
+    private void getNotification () {
+        final SharedPreferences myPreferences = PreferenceManager
+                .getDefaultSharedPreferences(context);
+        SharedPreferences.Editor myEditor = myPreferences.edit();
+        boolean first = myPreferences.getBoolean("firstStart?", true);
+
+
+        notificationTitleInFirstOpen = mFirebaseRemoteConfig.getString(notification_title_in_first_open);
+        notificationBodyInFirstOpen = mFirebaseRemoteConfig.getString(notification_body_in_first_open);
+
+        if (first == true) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            builder.setTitle(notificationTitleInFirstOpen);
+            builder.setMessage(notificationBodyInFirstOpen);
+            builder.setPositiveButton(context.getString(R.string.apply),
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialogInterface, int id) {
+                            dialogInterface.dismiss();
+                            myEditor.putBoolean("firstStart?", false);
+                            myEditor.apply();
+                            getAnotherNotifications();
+                        }
+                    });
+            builder.setCancelable(false);
+            builder.create().show();
+
+        } else {
+            getAnotherNotifications();
+        }
+    }
+
+    private void getAnotherNotifications() {
         notificationTitle = mFirebaseRemoteConfig.getString(notification_title);
         notificationBody = mFirebaseRemoteConfig.getString(notification_body);
         final SharedPreferences sharedPreferences = PreferenceManager
@@ -227,7 +272,7 @@ public class RemoteConfig {
         return mFirebaseRemoteConfig.getString(app_version);
     }
 
-    private void showIptvCoreNotFoundDialog() {
+    private Callable<Void> showIptvCoreNotFoundDialog () {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(R.string.dialog_core_not_installed_title);
         builder.setMessage(R.string.dialog_core_not_installed_message);
@@ -235,8 +280,20 @@ public class RemoteConfig {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int id) {
                         try {
-                            // try to open Google Play app first
-                            activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + _IPTV_CORE_PACKAGE_NAME)));
+                            StorageReference ref = FirebaseStorage.getInstance().getReferenceFromUrl("gs://mangotv-app-1ff36.appspot.com/APKs/iptv-core.apk");
+                            ref.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                @Override
+                                public void onSuccess(Uri uri) {
+                                    new Browser().openBrowser(uri ,activity);
+                                }
+                            }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Toast.makeText(activity, context.getString(R.string.internet_connection_error),
+                                            Toast.LENGTH_LONG).show();
+                                }
+                            });
+                            // downloader.downloadFile("iptv.apk");
                         } catch (ActivityNotFoundException e) {
                             // if Google Play is not found for some reason, let's open browser
                             activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://play.google.com/store/apps/details?id=" + _IPTV_CORE_PACKAGE_NAME)));
@@ -252,5 +309,6 @@ public class RemoteConfig {
                 });
         builder.setCancelable(false);
         builder.create().show();
+        return null;
     }
 }

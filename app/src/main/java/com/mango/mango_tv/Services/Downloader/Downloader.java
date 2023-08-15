@@ -10,9 +10,11 @@ import android.os.Build;
 import android.os.Environment;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
@@ -21,60 +23,87 @@ import com.mango.mango_tv.BuildConfig;
 import com.mango.mango_tv.R;
 
 import java.io.File;
+import java.util.concurrent.Callable;
 
 public class Downloader {
-    private final String APP_VERSION;
     private final Context context;
 
     private final Activity activity;
 
-    public Downloader(String APP_VERSION, Context context, Activity activity) {
-        this.APP_VERSION = APP_VERSION;
+    public Downloader(Context context, Activity activity) {
         this.context = context;
         this.activity = activity;
     }
 
 
-    public void createMessage(Intent intent) {
-
+    public void createMessage(Intent intent, Callable<Void> onCatch, String APP_VERSION) {
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(R.string.a_new_update_is_available).setMessage(context.getString(R.string.update_your_app) + ": " + APP_VERSION).setPositiveButton(R.string.dialog_button_install,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int id) {
                         dialogInterface.dismiss();
-                        downloadFile();
-                        activity.startActivity(intent);
-                        activity.finish();
+                        downloadFile("Mango TV.apk");
+                        try {
+                            activity.startActivity(intent);
+                            activity.finish();
+                        } catch (ActivityNotFoundException e) {
+                            // IPTV core app is not installed, let's ask the user to install it.
+                            try {
+                                onCatch.call();
+                            } catch (Exception exception) {
+                                Toast.makeText(activity, exception.toString(),
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        }
                     }
                 }).setNegativeButton(R.string.dialog_button_cancel,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int id) {
                         dialogInterface.dismiss();
-                        activity.startActivity(intent);
-                        activity.finish();
+                        try {
+                            activity.startActivity(intent);
+                            activity.finish();
+                        } catch (ActivityNotFoundException e) {
+                            // IPTV core app is not installed, let's ask the user to install it.
+                            try {
+                                onCatch.call();
+                            } catch (Exception exception) {
+                                Toast.makeText(activity, exception.toString(),
+                                        Toast.LENGTH_LONG).show();
+                            }
+                        }
                     }
                 }).setCancelable(false).show();
 
     }
 
-    private void downloadFile() {
+    public String getFilePath(String name, String folder) {
+        String destination = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/";
+        return destination += folder + name;
 
-        String fileName = "Mango TV.apk";
-        StorageReference ref = FirebaseStorage.getInstance().getReferenceFromUrl("gs://mangotv-app-1ff36.appspot.com/APKs/Mango TV.apk");
+    }
+
+    public void downloadFile(String fileName) {
+
+        StorageReference ref = FirebaseStorage.getInstance().getReferenceFromUrl("gs://mangotv-app-1ff36.appspot.com/APKs/" + fileName);
         String destination = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/";
         destination += fileName;
-        final Uri uri = Uri.parse("file://" + destination);
 
         //Delete update file if exists
         File file = new File(destination);
         if (file.exists())
-            //file.delete() - test this, I think sometimes it doesnt work
             file.delete();
         ref.getFile(file).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
                 installAPK(file);
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(activity, e.toString(),
+                        Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -95,7 +124,8 @@ public class Downloader {
                 intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             }
-            activity.startActivity(intent);
+                Toast.makeText(context, context.getString(R.string.installing), Toast.LENGTH_LONG).show();
+                activity.startActivityForResult(intent, 1);
 
 
             } catch (ActivityNotFoundException e) {

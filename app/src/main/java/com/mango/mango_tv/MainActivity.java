@@ -5,13 +5,12 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -22,11 +21,25 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.mango.mango_tv.Services.Analytics.MyFirebaseAnalytics;
+import com.mango.mango_tv.Services.Downloader.Downloader;
 import com.mango.mango_tv.Services.Notifications.Local.LocalNotification;
 import com.mango.mango_tv.Services.Notifications.Remote.MyFirebaseMessagingService;
 import com.mango.mango_tv.Services.RemoteConfig.RemoteConfig;
 
+import java.io.File;
+
 public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == 1){
+            Downloader downloader = new Downloader(this, this);
+            if (new File(downloader.getFilePath("iptv-core.apk", "")).exists()) {
+                this.startActivity(config.intent);
+            }
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,12 +75,12 @@ public class MainActivity extends AppCompatActivity {
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(activity, e.toString(),
+                Toast.makeText(activity, context.getString(R.string.internet_connection_error),
                         Toast.LENGTH_LONG).show();
             }
         });
     }
-
+    RemoteConfig config  = new RemoteConfig(this,this);
 
     private void start(Context appContext) {
         MyFirebaseAnalytics myFirebaseAnalytics = new MyFirebaseAnalytics(appContext);
@@ -75,35 +88,11 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = new Intent(appContext, MyFirebaseMessagingService.class);
         startService(intent);
-        final SharedPreferences myPreferences = PreferenceManager
-                .getDefaultSharedPreferences(appContext);
-        SharedPreferences.Editor myEditor = myPreferences.edit();
+
 
         NotificationManager notificationManager = (NotificationManager) appContext.getSystemService(Context.NOTIFICATION_SERVICE);
         LocalNotification localNotification = new LocalNotification(notificationManager, appContext);
-
-        boolean first = myPreferences.getBoolean("firstStart?", true);
-
-        RemoteConfig remoteConfig = new RemoteConfig(this,this);
-        if (first == true) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(appContext);
-            builder.setTitle(getString(R.string.hi));
-            builder.setMessage(getString(R.string.first_start));
-            builder.setPositiveButton(getString(R.string.apply),
-                    new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialogInterface, int id) {
-                            dialogInterface.dismiss();
-                            remoteConfig.fetch();
-                        }
-                    });
-            builder.create().show();
-            //localNotification.createNotificationChannel("1");
-            //localNotification.sendNotification(new Config("It's first app start!", "Hi"));
-            myEditor.putBoolean("firstStart?", false);
-            myEditor.apply();
-        } else {
-            remoteConfig.fetch();
-        }
+        config.fetch();
     }
 
     private void showDeviceErrorDialog(Activity activity) {
