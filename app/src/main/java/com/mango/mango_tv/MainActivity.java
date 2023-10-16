@@ -1,7 +1,6 @@
 package com.mango.mango_tv;
 
 import android.app.Activity;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -17,12 +16,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.analytics.FirebaseAnalytics;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.mango.mango_tv.Services.Analytics.MyFirebaseAnalytics;
 import com.mango.mango_tv.Services.Downloader.Downloader;
-import com.mango.mango_tv.Services.Notifications.Local.LocalNotification;
 import com.mango.mango_tv.Services.Notifications.Remote.MyFirebaseMessagingService;
 import com.mango.mango_tv.Services.RemoteConfig.RemoteConfig;
 
@@ -33,9 +32,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == 1){
-            Downloader downloader = new Downloader(this, this);
-            if (new File(downloader.getFilePath("iptv-core.apk", "")).exists()) {
+        if (requestCode == 1) {
+            Downloader downloader = new Downloader();
+            if (new File(downloader.getFilePath("iptv.apk", "")).exists()) {
                 this.startActivity(config.intent);
             }
         }
@@ -59,14 +58,40 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    private void _start(boolean value, Context context, Activity activity) {
+        if (value) {
+            start(context);
+        } else {
+            showDeviceErrorDialog(activity);
+        }
+    }
+
     private void deviceModelCheck(Context context, Activity activity) {
         String model = Build.MODEL;
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference(model);
+        myRef.get().addOnSuccessListener(new OnSuccessListener<DataSnapshot>() {
+            @Override
+            public void onSuccess(DataSnapshot documentSnapshot) {
+                _start(documentSnapshot.exists(), context, activity);
+
+
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                _start(model.contains("SMUX BOX"), context, activity);
+
+            }
+        });
+        /*FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("Models").document(model).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                     if (documentSnapshot.exists()) {
                         start(context);
+
                     } else {
                         showDeviceErrorDialog(activity);
                     }
@@ -75,23 +100,22 @@ public class MainActivity extends AppCompatActivity {
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(activity, context.getString(R.string.internet_connection_error),
-                        Toast.LENGTH_LONG).show();
+                if(model.contains("SMUX BOX")) {
+                    start(context);
+                } else {
+                    showDeviceErrorDialog(activity);
+                }
             }
-        });
+        });*/
     }
-    RemoteConfig config  = new RemoteConfig(this,this);
+
+    RemoteConfig config = new RemoteConfig(this, this);
 
     private void start(Context appContext) {
         MyFirebaseAnalytics myFirebaseAnalytics = new MyFirebaseAnalytics(appContext);
         myFirebaseAnalytics.firebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, new Bundle());
-
         Intent intent = new Intent(appContext, MyFirebaseMessagingService.class);
         startService(intent);
-
-
-        NotificationManager notificationManager = (NotificationManager) appContext.getSystemService(Context.NOTIFICATION_SERVICE);
-        LocalNotification localNotification = new LocalNotification(notificationManager, appContext);
         config.fetch();
     }
 

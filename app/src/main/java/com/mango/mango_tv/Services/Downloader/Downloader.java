@@ -26,20 +26,17 @@ import java.io.File;
 import java.util.concurrent.Callable;
 
 public class Downloader {
-    private final Context context;
+    private Context context;
 
-    private final Activity activity;
-
-    public Downloader(Context context, Activity activity) {
-        this.context = context;
-        this.activity = activity;
-    }
+    private Activity activity;
 
 
-    public void createMessage(Intent intent, Callable<Void> onCatch, String APP_VERSION) {
 
-        final AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(R.string.a_new_update_is_available).setMessage(context.getString(R.string.update_your_app) + ": " + APP_VERSION).setPositiveButton(R.string.dialog_button_install,
+    public void createMessage(Intent intent, Callable<Void> onCatch, String APP_VERSION, Context cont, Activity activity1) {
+        context = cont;
+        activity = activity1;
+        final AlertDialog.Builder builder = new AlertDialog.Builder(cont);
+        builder.setTitle(R.string.a_new_update_is_available).setMessage(cont.getString(R.string.update_your_app) + ": " + APP_VERSION).setPositiveButton(R.string.dialog_button_install,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int id) {
                         dialogInterface.dismiss();
@@ -48,6 +45,7 @@ public class Downloader {
                             activity.startActivity(intent);
                             activity.finish();
                         } catch (ActivityNotFoundException e) {
+                            System.out.println(e);
                             // IPTV core app is not installed, let's ask the user to install it.
                             try {
                                 onCatch.call();
@@ -67,6 +65,7 @@ public class Downloader {
                         } catch (ActivityNotFoundException e) {
                             // IPTV core app is not installed, let's ask the user to install it.
                             try {
+                                System.out.println(e);
                                 onCatch.call();
                             } catch (Exception exception) {
                                 Toast.makeText(activity, exception.toString(),
@@ -79,16 +78,14 @@ public class Downloader {
     }
 
     public String getFilePath(String name, String folder) {
-        String destination = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/";
-        return destination += folder + name;
+        return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/"+name;
 
     }
 
     public void downloadFile(String fileName) {
 
         StorageReference ref = FirebaseStorage.getInstance().getReferenceFromUrl("gs://mangotv-app-1ff36.appspot.com/APKs/" + fileName);
-        String destination = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/";
-        destination += fileName;
+        String destination = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/" + fileName;
 
         //Delete update file if exists
         File file = new File(destination);
@@ -97,6 +94,10 @@ public class Downloader {
         ref.getFile(file).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+
+
+                Toast.makeText(activity,"downloading a file",
+                        Toast.LENGTH_LONG).show();
                 installAPK(file);
             }
         }).addOnFailureListener(new OnFailureListener() {
