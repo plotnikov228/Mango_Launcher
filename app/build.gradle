@@ -39,5 +39,9 @@ dependencies {
     apply plugin: 'com.google.gms.google-services'
     implementation 'com.google.firebase:firebase-config'
     implementation 'androidx.leanback:leanback:1.0.0'
+    implementation("io.appwrite:sdk-for-android:4.0.0")
+    implementation "com.github.parse-community.Parse-SDK-Android:parse:1.26.0"
+
+
 
 }

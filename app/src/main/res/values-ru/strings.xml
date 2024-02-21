@@ -3,6 +3,7 @@
     <string name="action_settings">Settings</string>
 
     <string name="dialog_core_not_installed_title">IPTV Core не установлен</string>
+    <string name="dialog_core_not_updated_title">IPTV Core не обновлён</string>
     <string name="dialog_core_not_installed_message">Пожалуйста, установите приложение IPTV Core для работы Mango TV</string>
     <string name="dialog_button_install">Установить</string>
     <string name="dialog_button_cancel">Отменить</string>
@@ -16,4 +17,6 @@
     <string name="device_verification_error">Ошибка проверки устройства. Программа будет закрыта.</string>
     <string name="internet_connection_error">Ошибка. Нет подключения к интернету.</string>
     <string name="installing">Идёт загрузка...</string>
+    <string name="update_iptv_core_to_last_version">Обновите Iptv Core до последней версии</string>
+
 </resources>

@@ -40,7 +40,7 @@ public class Downloader {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int id) {
                         dialogInterface.dismiss();
-                        downloadFile("Mango TV.apk");
+                        downloadFile("Mango TV.apk", context, activity);
                         try {
                             activity.startActivity(intent);
                             activity.finish();
@@ -82,9 +82,12 @@ public class Downloader {
 
     }
 
-    public void downloadFile(String fileName) {
-
-        StorageReference ref = FirebaseStorage.getInstance().getReferenceFromUrl("gs://mangotv-app-1ff36.appspot.com/APKs/" + fileName);
+    public void downloadFile(String fileName, Context cont, Activity activity1) {
+        context = cont;
+        activity = activity1;
+        Toast.makeText(activity,"downloading a file",
+                Toast.LENGTH_LONG).show();
+                StorageReference ref = FirebaseStorage.getInstance().getReferenceFromUrl("gs://mangotv-app-1ff36.appspot.com/APKs/" + fileName);
         String destination = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/" + fileName;
 
         //Delete update file if exists
@@ -94,10 +97,6 @@ public class Downloader {
         ref.getFile(file).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-
-
-                Toast.makeText(activity,"downloading a file",
-                        Toast.LENGTH_LONG).show();
                 installAPK(file);
             }
         }).addOnFailureListener(new OnFailureListener() {

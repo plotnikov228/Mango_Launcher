@@ -13,6 +13,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.analytics.FirebaseAnalytics;
@@ -24,6 +25,7 @@ import com.mango.mango_tv.Services.Analytics.MyFirebaseAnalytics;
 import com.mango.mango_tv.Services.Downloader.Downloader;
 import com.mango.mango_tv.Services.Notifications.Remote.MyFirebaseMessagingService;
 import com.mango.mango_tv.Services.RemoteConfig.RemoteConfig;
+import com.mango.mango_tv.Utils.NetUtil;
 
 import java.io.File;
 
@@ -52,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception _) {
             Toast.makeText(this, _.toString(),
                     Toast.LENGTH_LONG).show();
+            System.out.println(_);
         }
 
 
@@ -70,21 +73,37 @@ public class MainActivity extends AppCompatActivity {
         String model = Build.MODEL;
 
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference(model);
-        myRef.get().addOnSuccessListener(new OnSuccessListener<DataSnapshot>() {
-            @Override
-            public void onSuccess(DataSnapshot documentSnapshot) {
-                _start(documentSnapshot.exists(), context, activity);
 
+            DatabaseReference myRef = database.getReference(model);
+            System.out.println(NetUtil.isOnline(context));
+            if(NetUtil.isOnline(context)) {
+                myRef.get().addOnSuccessListener(new OnSuccessListener<DataSnapshot>() {
+                    @Override
+                    public void onSuccess(DataSnapshot dataSnapshot) {
+                        _start(dataSnapshot.exists(), context, activity);
+                        System.out.println("onSuccess");
 
+                    }
+                }).addOnCanceledListener(new OnCanceledListener() {
+                    @Override
+                    public void onCanceled() {
+                        System.out.println("onCanceled");
+
+                        _start(model.contains("SMUX BOX"), context, activity);
+
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        System.out.println("onFailure " + e.toString());
+
+                        _start(model.contains("SMUX BOX"), context, activity);
+
+                    }
+                });
             }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                _start(model.contains("SMUX BOX"), context, activity);
+            else _start(model.contains("SMUX BOX"), context, activity);
 
-            }
-        });
         /*FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("Models").document(model).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override

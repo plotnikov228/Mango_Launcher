@@ -2,6 +2,7 @@ package com.mango.mango_tv.Services.RemoteConfig;
 
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -22,8 +23,11 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.mango.mango_tv.BuildConfig;
 import com.mango.mango_tv.R;
 import com.mango.mango_tv.Services.Downloader.Downloader;
+import com.mango.mango_tv.Utils.NetUtil;
 import com.mango.mango_tv.Utils.PermissionUtils;
 import com.mango.mango_tv.Utils.VersionComparator;
+import com.parse.Parse;
+import com.parse.ParseObject;
 
 import java.util.concurrent.Callable;
 
@@ -76,6 +80,16 @@ public class RemoteConfig {
     public RemoteConfig(Context context, Activity activity) {
         this.activity = activity;
         this.context = context;
+        getClient(context);
+    }
+
+
+    public void getClient(Context context) {
+        Parse.initialize(new Parse.Configuration.Builder(context)
+                .applicationId("MDMKHd6immrSO6SWnl8toIgGfuWZY8x3txT6qoQ0")
+                .clientKey("gBsw9m0QQ87eekHaK5gzjdzWxvDWSyBgTqaAvmJg")
+                .server("https://parseapi.back4app.com")
+                .build());
     }
 
     public void fetch() {
@@ -107,7 +121,6 @@ public class RemoteConfig {
     private void init() {
         try {
             intent.setClassName(_IPTV_CORE_PACKAGE_NAME, _IPTV_CORE_CLASS_NAME);
-
             /*if (_package != null ) {
                 System.out.println(_package);
                 intent.putExtra("package", _package);
@@ -139,7 +152,9 @@ public class RemoteConfig {
             System.out.println(e);
         }
     }
+
     Downloader downloader = new Downloader();
+
     private void checkAppVersion() {
 
         if (appVersion != null && VersionComparator.compareVersions(BuildConfig.VERSION_NAME, appVersion)) {
@@ -149,55 +164,110 @@ public class RemoteConfig {
                 PermissionUtils.getPermissionsForInstallingFromUnknownSource(context, activity);
             }
 
-            downloader.createMessage(intent, showIptvCoreNotFoundDialog(), currentAppVersionStr, context, activity);
+            downloader.createMessage(intent, showIptvCoreNotFoundDialog(false), currentAppVersionStr, context, activity);
         } else {
-                try {
-                    activity.startActivity(intent);
-                    activity.finish();
-                } catch(Exception e) {
-                    showIptvCoreNotFoundDialog();
+            final String iptvLocalVersion = checkIptvCoreVersion();
+            if (iptvLocalVersion.isEmpty()) {
+                showIptvCoreNotFoundDialog(false);
+
+            } else {
+                if (iptvCoreVersion != null && VersionComparator.compareVersions(iptvLocalVersion, iptvCoreVersion) && !iptvLocalVersion.equals(iptvCoreVersion)) {
+                    showIptvCoreNotFoundDialog(true);
+                } else {
+                    try {
+                        activity.startActivity(intent);
+                        activity.finish();
+                    } catch (Exception e) {
+                        showIptvCoreNotFoundDialog(false);
+                    }
                 }
+            }
         }
     }
 
     private String getPlaylistUrl() {
-        return mFirebaseRemoteConfig.getString(playlist_url);
+        try {
+            return mFirebaseRemoteConfig.getString(playlist_url);
+        } catch (Exception e) {
+            ParseObject datas = new ParseObject("datas");
+            return datas.getString(playlist_url);
+        }
     }
 
     private String getTvgUrl() {
-        return mFirebaseRemoteConfig.getString(tvg_url);
+        try {
+            return mFirebaseRemoteConfig.getString(tvg_url);
+        } catch (Exception e) {
+            ParseObject datas = new ParseObject("datas");
+            return datas.getString(tvg_url);
+        }
     }
 
     private Integer getHttpConnectTimeout() {
-        return (int) mFirebaseRemoteConfig.getDouble(http_connect_timeout);
+        try {
+            return (int) mFirebaseRemoteConfig.getDouble(http_connect_timeout);
+        } catch (Exception e) {
+            ParseObject datas = new ParseObject("datas");
+            return (int) datas.getDouble(http_connect_timeout);
+        }
     }
 
     private Integer getHttpReadTimeout() {
-        return (int) mFirebaseRemoteConfig.getDouble(http_read_timeout);
+        try {
+            return (int) mFirebaseRemoteConfig.getDouble(http_read_timeout);
+        } catch (Exception e) {
+            ParseObject datas = new ParseObject("datas");
+            return (int) datas.getDouble(http_read_timeout);
+        }
     }
 
     private String getHttpUserAgent() {
-        return mFirebaseRemoteConfig.getString(http_user_agent);
+        try {
+            return mFirebaseRemoteConfig.getString(http_user_agent);
+        } catch (Exception e) {
+            ParseObject datas = new ParseObject("datas");
+            return datas.getString(http_user_agent);
+        }
     }
 
     private String getPreferredPlayerPackage() {
-        return mFirebaseRemoteConfig.getString(preferred_player_package);
+        try {
+            return mFirebaseRemoteConfig.getString(preferred_player_package);
+        } catch (Exception e) {
+            ParseObject datas = new ParseObject("datas");
+            return datas.getString(preferred_player_package);
+        }
     }
 
 
     private Boolean getHideAllChannelsTab() {
+        try {
         return mFirebaseRemoteConfig.getBoolean(hide_all_channels_tab);
+    } catch (Exception e) {
+        ParseObject datas = new ParseObject("datas");
+        return datas.getBoolean(hide_all_channels_tab);
+    }
     }
 
     private String getPackage() {
+        try {
         return mFirebaseRemoteConfig.getString("package");
+    } catch (Exception e) {
+        ParseObject datas = new ParseObject("datas");
+        return datas.getString("package");
+    }
     }
 
     private String getIptvCoreVersion() {
+        try {
         return mFirebaseRemoteConfig.getString(iptv_core_version);
+    } catch (Exception e) {
+        ParseObject datas = new ParseObject("datas");
+        return datas.getString(iptv_core_version);
+    }
     }
 
-    private void getNotification () {
+    private void getNotification() {
         final SharedPreferences myPreferences = PreferenceManager
                 .getDefaultSharedPreferences(context);
         SharedPreferences.Editor myEditor = myPreferences.edit();
@@ -207,7 +277,7 @@ public class RemoteConfig {
         notificationTitleInFirstOpen = mFirebaseRemoteConfig.getString(notification_title_in_first_open);
         notificationBodyInFirstOpen = mFirebaseRemoteConfig.getString(notification_body_in_first_open);
 
-        if (first) {
+        if (first && NetUtil.isOnline(context)) {
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             builder.setTitle(notificationTitleInFirstOpen);
             builder.setMessage(notificationBodyInFirstOpen);
@@ -267,30 +337,41 @@ public class RemoteConfig {
 
 
     private String getAppVersion() {
+        try {
         return mFirebaseRemoteConfig.getString(app_version);
+    } catch (Exception e) {
+        ParseObject datas = new ParseObject("datas");
+        return datas.getString(app_version);
+    }
     }
 
 
-
-    private Callable<Void> showIptvCoreNotFoundDialog () {
+    private Callable<Void> showIptvCoreNotFoundDialog(boolean needUpdate) {
+        if (!PermissionUtils.hasPermissions(context)) {
+            PermissionUtils.requestPermissions(activity, 101);
+            PermissionUtils.getPermissionsForInstallingFromUnknownSource(context, activity);
+        }
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(R.string.dialog_core_not_installed_title);
-        builder.setMessage(R.string.dialog_core_not_installed_message);
+        builder.setTitle(needUpdate ? R.string.a_new_update_is_available : R.string.dialog_core_not_installed_title);
+        builder.setMessage(needUpdate ? R.string.dialog_core_not_updated_title : R.string.dialog_core_not_installed_message);
         builder.setPositiveButton(R.string.dialog_button_install,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int id) {
-                        /*try {
-                             downloader.downloadFile("iptv.apk");
-                        } catch (ActivityNotFoundException e) {*/
+                        try {
+                            downloader.downloadFile("iptv.apk", context, activity);
+                        } catch (ActivityNotFoundException e) {
                             // if Google Play is not found for some reason, let's open browser
                             activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://play.google.com/store/apps/details?id=" + _IPTV_CORE_PACKAGE_NAME)));
-                       // }
+                        }
                     }
                 });
         builder.setNegativeButton(R.string.dialog_button_cancel,
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int id) {
                         // if cancelled - just close the app
+                        if (needUpdate) {
+                            activity.startActivity(intent);
+                        }
                         activity.finish();
                     }
                 });
@@ -299,13 +380,14 @@ public class RemoteConfig {
         return null;
     }
 
-    String checkIptvCoreVersion () {
+    String checkIptvCoreVersion() {
         PackageInfo pinfo = null;
         try {
             pinfo = activity.getPackageManager().getPackageInfo(_IPTV_CORE_PACKAGE_NAME, 0);
+            return pinfo.versionName;
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
-        return pinfo.versionName;
+        return "";
     }
 }
