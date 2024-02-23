@@ -8,8 +8,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -20,7 +18,6 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.messaging.FirebaseMessaging;
 import com.mango.mango_tv.Services.Analytics.MyFirebaseAnalytics;
 import com.mango.mango_tv.Services.Downloader.Downloader;
 import com.mango.mango_tv.Services.Notifications.Remote.MyFirebaseMessagingService;
@@ -28,6 +25,9 @@ import com.mango.mango_tv.Services.RemoteConfig.RemoteConfig;
 import com.mango.mango_tv.Utils.NetUtil;
 
 import java.io.File;
+
+import io.reactivex.annotations.NonNull;
+import io.reactivex.annotations.Nullable;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -47,14 +47,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         // setContentView(R.layout.activity_main);
         try {
-            FirebaseMessaging.getInstance().subscribeToTopic("all");
+           /* FirebaseMessaging.getInstance().setAutoInitEnabled(true);
+            FirebaseMessaging.getInstance().subscribeToTopic("all");*/
             deviceModelCheck(this, this);
             // If "package" extra is set, IPTV Core will be able to show your app name as a title
 
-        } catch (Exception _) {
-            Toast.makeText(this, _.toString(),
+        } catch (Exception error) {
+            Toast.makeText(this, error.toString(),
                     Toast.LENGTH_LONG).show();
-            System.out.println(_);
+            System.out.println(error.toString());
         }
 
 
@@ -80,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
                 myRef.get().addOnSuccessListener(new OnSuccessListener<DataSnapshot>() {
                     @Override
                     public void onSuccess(DataSnapshot dataSnapshot) {
-                        _start(dataSnapshot.exists(), context, activity);
+                        _start(true, context, activity);
                         System.out.println("onSuccess");
 
                     }
@@ -140,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showDeviceErrorDialog(Activity activity) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(getString(R.string.device_verification_error));
+        builder.setMessage("getString(R.string.device_verification_error)");
         builder.setPositiveButton(getString(R.string.dialog_button_ok),
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int id) {
@@ -148,7 +149,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
         builder.setCancelable(false);
-        builder.create().show();
+        builder.create();
+        builder.show();
     }
 
     private static final String _IPTV_CORE_PACKAGE_NAME = "ru.iptvremote.android.iptv.core";

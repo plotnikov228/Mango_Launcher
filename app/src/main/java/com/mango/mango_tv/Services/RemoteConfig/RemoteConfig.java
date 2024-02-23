@@ -73,6 +73,8 @@ public class RemoteConfig {
     public String iptvCoreVersion;
 
 
+    private boolean test = false;
+
     FirebaseRemoteConfig mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
     FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
             .setMinimumFetchIntervalInSeconds(0).build();
@@ -80,11 +82,10 @@ public class RemoteConfig {
     public RemoteConfig(Context context, Activity activity) {
         this.activity = activity;
         this.context = context;
-        getClient(context);
     }
 
 
-    public void getClient(Context context) {
+    public void getClient() {
         Parse.initialize(new Parse.Configuration.Builder(context)
                 .applicationId("MDMKHd6immrSO6SWnl8toIgGfuWZY8x3txT6qoQ0")
                 .clientKey("gBsw9m0QQ87eekHaK5gzjdzWxvDWSyBgTqaAvmJg")
@@ -93,9 +94,12 @@ public class RemoteConfig {
     }
 
     public void fetch() {
-        mFirebaseRemoteConfig.setDefaultsAsync(R.xml.remote_config_defaults);
 
-        mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings).addOnCompleteListener(task -> mFirebaseRemoteConfig.fetchAndActivate().addOnCompleteListener(new OnCompleteListener<Boolean>() {
+        try {
+            mFirebaseRemoteConfig.setDefaultsAsync(R.xml.remote_config_defaults);
+
+            mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings).addOnCompleteListener(task -> mFirebaseRemoteConfig.fetchAndActivate().addOnCompleteListener(new OnCompleteListener<Boolean>() {
+
             @Override
             public void onComplete(@NonNull Task<Boolean> task) {
                 playlistUrl = getPlaylistUrl();
@@ -116,6 +120,20 @@ public class RemoteConfig {
                 System.out.println(e);
             }
         }));
+        } catch (Exception error) {
+            getClient();
+            playlistUrl = getPlaylistUrl();
+            tvgUrl = getTvgUrl();
+            httpConnectTimeout = getHttpConnectTimeout();
+            httpReadTimeout = getHttpReadTimeout();
+            httpUserAgent = getHttpUserAgent();
+            preferredPlayerPackage = getPreferredPlayerPackage();
+            hideAllChannelsTab = getHideAllChannelsTab();
+            appVersion = getAppVersion();
+            iptvCoreVersion = getIptvCoreVersion();
+            _package = getPackage();
+            getNotification();
+        }
     }
 
     private void init() {
@@ -187,6 +205,10 @@ public class RemoteConfig {
 
     private String getPlaylistUrl() {
         try {
+            if(test) {
+                ParseObject datas = new ParseObject("datas");
+                return datas.getString(playlist_url);
+            }
             return mFirebaseRemoteConfig.getString(playlist_url);
         } catch (Exception e) {
             ParseObject datas = new ParseObject("datas");
@@ -196,6 +218,10 @@ public class RemoteConfig {
 
     private String getTvgUrl() {
         try {
+            if(test) {
+                ParseObject datas = new ParseObject("datas");
+                return datas.getString(tvg_url);
+            }
             return mFirebaseRemoteConfig.getString(tvg_url);
         } catch (Exception e) {
             ParseObject datas = new ParseObject("datas");
@@ -205,6 +231,10 @@ public class RemoteConfig {
 
     private Integer getHttpConnectTimeout() {
         try {
+            if(test) {
+                ParseObject datas = new ParseObject("datas");
+                return (int) datas.getDouble(http_connect_timeout);
+            }
             return (int) mFirebaseRemoteConfig.getDouble(http_connect_timeout);
         } catch (Exception e) {
             ParseObject datas = new ParseObject("datas");
@@ -214,6 +244,10 @@ public class RemoteConfig {
 
     private Integer getHttpReadTimeout() {
         try {
+            if(test) {
+                ParseObject datas = new ParseObject("datas");
+                return (int) datas.getDouble(http_read_timeout);
+            }
             return (int) mFirebaseRemoteConfig.getDouble(http_read_timeout);
         } catch (Exception e) {
             ParseObject datas = new ParseObject("datas");
@@ -223,6 +257,10 @@ public class RemoteConfig {
 
     private String getHttpUserAgent() {
         try {
+            if(test) {
+                ParseObject datas = new ParseObject("datas");
+                return datas.getString(http_user_agent);
+            }
             return mFirebaseRemoteConfig.getString(http_user_agent);
         } catch (Exception e) {
             ParseObject datas = new ParseObject("datas");
@@ -232,6 +270,10 @@ public class RemoteConfig {
 
     private String getPreferredPlayerPackage() {
         try {
+            if(test) {
+                ParseObject datas = new ParseObject("datas");
+                return datas.getString(preferred_player_package);
+            }
             return mFirebaseRemoteConfig.getString(preferred_player_package);
         } catch (Exception e) {
             ParseObject datas = new ParseObject("datas");
@@ -242,6 +284,10 @@ public class RemoteConfig {
 
     private Boolean getHideAllChannelsTab() {
         try {
+            if(test) {
+                ParseObject datas = new ParseObject("datas");
+                return datas.getBoolean(hide_all_channels_tab);
+            }
         return mFirebaseRemoteConfig.getBoolean(hide_all_channels_tab);
     } catch (Exception e) {
         ParseObject datas = new ParseObject("datas");
@@ -251,6 +297,10 @@ public class RemoteConfig {
 
     private String getPackage() {
         try {
+            if(test) {
+                ParseObject datas = new ParseObject("datas");
+                return datas.getString("package");
+            }
         return mFirebaseRemoteConfig.getString("package");
     } catch (Exception e) {
         ParseObject datas = new ParseObject("datas");
@@ -260,6 +310,10 @@ public class RemoteConfig {
 
     private String getIptvCoreVersion() {
         try {
+            if(test) {
+                ParseObject datas = new ParseObject("datas");
+                return datas.getString(iptv_core_version);
+            }
         return mFirebaseRemoteConfig.getString(iptv_core_version);
     } catch (Exception e) {
         ParseObject datas = new ParseObject("datas");
@@ -352,9 +406,9 @@ public class RemoteConfig {
             PermissionUtils.getPermissionsForInstallingFromUnknownSource(context, activity);
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(needUpdate ? R.string.a_new_update_is_available : R.string.dialog_core_not_installed_title);
-        builder.setMessage(needUpdate ? R.string.dialog_core_not_updated_title : R.string.dialog_core_not_installed_message);
-        builder.setPositiveButton(R.string.dialog_button_install,
+        builder.setTitle(needUpdate ? context.getString(R.string.a_new_update_is_available) : context.getString(R.string.dialog_core_not_installed_title));
+        builder.setMessage(needUpdate ? context.getString(R.string.dialog_core_not_updated_title) : context.getString(R.string.dialog_core_not_installed_message));
+        builder.setPositiveButton(context.getString(R.string.dialog_button_install),
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int id) {
                         try {
@@ -365,7 +419,7 @@ public class RemoteConfig {
                         }
                     }
                 });
-        builder.setNegativeButton(R.string.dialog_button_cancel,
+        builder.setNegativeButton(context.getString(R.string.dialog_button_cancel),
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int id) {
                         // if cancelled - just close the app

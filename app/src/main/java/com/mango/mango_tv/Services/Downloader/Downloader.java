@@ -55,7 +55,7 @@ public class Downloader {
                             }
                         }
                     }
-                }).setNegativeButton(R.string.dialog_button_cancel,
+                }).setNegativeButton(cont.getString(R.string.dialog_button_cancel),
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialogInterface, int id) {
                         dialogInterface.dismiss();
@@ -85,9 +85,10 @@ public class Downloader {
     public void downloadFile(String fileName, Context cont, Activity activity1) {
         context = cont;
         activity = activity1;
-        Toast.makeText(activity,"downloading a file",
+        Toast.makeText(activity,"downloading a file - " + fileName,
                 Toast.LENGTH_LONG).show();
-                StorageReference ref = FirebaseStorage.getInstance().getReferenceFromUrl("gs://mangotv-app-1ff36.appspot.com/APKs/" + fileName);
+                StorageReference reference = FirebaseStorage.getInstance().getReferenceFromUrl("gs://mangotv-app-1ff36.appspot.com/");
+                StorageReference ref = reference.child("APKs/").child(fileName);
         String destination = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/" + fileName;
 
         //Delete update file if exists
