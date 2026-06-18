@@ -45,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // setContentView(R.layout.activity_main);
         try {
            /* FirebaseMessaging.getInstance().setAutoInitEnabled(true);
             FirebaseMessaging.getInstance().subscribeToTopic("all");*/
@@ -81,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
                 myRef.get().addOnSuccessListener(new OnSuccessListener<DataSnapshot>() {
                     @Override
                     public void onSuccess(DataSnapshot dataSnapshot) {
-                        _start(true, context, activity);
+                        _start(dataSnapshot.exists(), context, activity);
                         System.out.println("onSuccess");
 
                     }
@@ -132,10 +131,14 @@ public class MainActivity extends AppCompatActivity {
     RemoteConfig config = new RemoteConfig(this, this);
 
     private void start(Context appContext) {
-        MyFirebaseAnalytics myFirebaseAnalytics = new MyFirebaseAnalytics(appContext);
-        myFirebaseAnalytics.firebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, new Bundle());
-        Intent intent = new Intent(appContext, MyFirebaseMessagingService.class);
-        startService(intent);
+        try {
+            MyFirebaseAnalytics myFirebaseAnalytics = new MyFirebaseAnalytics(appContext);
+            myFirebaseAnalytics.firebaseAnalytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, new Bundle());
+            Intent intent = new Intent(appContext, MyFirebaseMessagingService.class);
+            startService(intent);
+        } catch (Exception _) {
+
+        }
         config.fetch();
     }
 

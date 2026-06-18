@@ -16,18 +16,22 @@ import androidx.core.content.ContextCompat;
 public class PermissionUtils {
 
     public static void getPermissionsForInstallingFromUnknownSource (Context context, Activity activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if(context.getPackageManager().canRequestPackageInstalls()){
-                activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES));
-            } else {
-                ActivityCompat.requestPermissions(activity, new String[] {Manifest.permission.REQUEST_INSTALL_PACKAGES}, 101);
-                activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES));
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (context.getPackageManager().canRequestPackageInstalls()) {
+                    activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES));
+                } else {
+                    ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.REQUEST_INSTALL_PACKAGES}, 101);
+                    activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES));
+                }
             }
+        } catch (Exception e) {
+
         }
     }
 
     public static boolean hasPermissions(Context context) {
-
+    try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return Environment.isExternalStorageManager();
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -36,6 +40,9 @@ public class PermissionUtils {
         } else {
             return true;
         }
+    } catch (Exception e) {
+        return true;
+    }
     }
 
     public static void requestPermissions(Activity activity, int requestCode) {
